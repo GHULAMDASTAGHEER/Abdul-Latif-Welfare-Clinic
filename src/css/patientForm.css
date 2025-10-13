@@ -221,6 +221,15 @@
   background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
 }
 
+.btn-preview {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+}
+
+.btn-preview:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .form-row {
@@ -394,5 +403,317 @@
   
   .toast-content p {
     font-size: 13px;
+  }
+}
+
+/* Preview Receipt Modal Styles */
+.preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.preview-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.preview-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.preview-close:hover {
+  background: #dc2626;
+  transform: rotate(90deg) scale(1.1);
+}
+
+.preview-receipt {
+  padding: 40px 30px;
+  font-family: 'Courier New', monospace;
+  color: #000;
+  background: #fff;
+}
+
+.receipt-urdu {
+  font-family: 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', serif;
+  font-size: 14px;
+  margin: 0 0 6px 0;
+}
+
+.token-display {
+  text-align: center;
+  margin: 6px 0 12px 0;
+}
+
+.token-label {
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.token-number {
+  font-weight: 800;
+  font-size: 84px;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.preview-receipt .receipt-header {
+  text-align: center;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 8px;
+}
+
+.preview-receipt .receipt-header h2 {
+  margin: 0 0 10px 0;
+  font-size: 24px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #2d5be3;
+}
+
+.preview-receipt .receipt-subtitle {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: normal;
+}
+
+.preview-receipt .receipt-divider {
+  margin: 15px 0;
+  text-align: center;
+  color: #d1d5db;
+  font-size: 12px;
+  letter-spacing: -1px;
+}
+
+.preview-receipt .receipt-body { margin: 12px 0; }
+
+.preview-receipt .receipt-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0;
+  font-size: 15px;
+  line-height: 1.35;
+  padding: 2px 0;
+}
+
+.preview-receipt .receipt-label {
+  font-weight: bold;
+  color: #374151;
+  flex: 0 0 45%;
+}
+
+.preview-receipt .receipt-value {
+  flex: 0 0 50%;
+  text-align: right;
+  color: #1f2937;
+}
+
+.preview-receipt .receipt-free {
+  color: #10b981;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+.preview-receipt .receipt-fee {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px dashed #d1d5db;
+}
+
+.preview-receipt .receipt-fee .receipt-label,
+.preview-receipt .receipt-fee .receipt-value {
+  font-size: 16px;
+  font-weight: bold;
+  color: #2d5be3;
+}
+
+.preview-receipt .receipt-footer {
+  margin-top: 12px;
+  text-align: center;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 8px;
+}
+
+.preview-receipt .receipt-thank-you {
+  margin: 10px 0 5px 0;
+  font-size: 16px;
+  font-weight: bold;
+  color: #10b981;
+}
+
+.preview-receipt .receipt-note {
+  margin: 5px 0;
+  font-size: 11px;
+  font-style: italic;
+  color: #9ca3af;
+}
+
+/* Mobile Preview Styles */
+@media (max-width: 768px) {
+  .preview-modal {
+    max-width: 90%;
+    margin: 20px;
+  }
+  
+  .preview-receipt {
+    padding: 30px 20px;
+  }
+  
+  .preview-receipt .receipt-header h2 {
+    font-size: 20px;
+  }
+  
+  .preview-receipt .receipt-row {
+    font-size: 13px;
+  }
+}
+
+/* Print Receipt Styles */
+.print-receipt {
+  display: none;
+}
+
+@media print {
+  /* Hide everything except the receipt when printing */
+  body * {
+    visibility: hidden;
+  }
+  
+  .print-receipt,
+  .print-receipt * {
+    visibility: visible;
+  }
+  
+  .print-receipt {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm; /* Standard thermal printer width */
+    padding: 6mm;
+    font-family: 'Courier New', monospace;
+    color: #000;
+    background: #fff;
+  }
+  
+  .token-display { text-align: center; margin: 4px 0 8px 0; }
+  .token-label { font-size: 11px; }
+  .token-number { font-size: 88px; font-weight: 800; line-height: 1; }
+  .receipt-urdu { font-size: 13px; }
+  
+  .receipt-header { text-align: center; margin-bottom: 10px; }
+  
+  .receipt-header h2 { margin: 0; font-size: 20px; font-weight: bold; text-transform: uppercase; }
+  
+  .receipt-subtitle {
+    margin: 5px 0;
+    font-size: 12px;
+    font-weight: normal;
+  }
+  
+  .receipt-divider { margin: 8px 0; text-align: center; font-size: 10px; letter-spacing: -1px; }
+  
+  .receipt-body { margin: 10px 0; }
+  
+  .receipt-row { display: flex; justify-content: space-between; margin: 6px 0; font-size: 13px; line-height: 1.35; }
+  
+  .receipt-label {
+    font-weight: bold;
+    flex: 0 0 45%;
+  }
+  
+  .receipt-value {
+    flex: 0 0 50%;
+    text-align: right;
+  }
+  
+  .receipt-free {
+    font-weight: bold;
+    font-size: 13px;
+  }
+  
+  .receipt-fee {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #000;
+  }
+  
+  .receipt-fee .receipt-label,
+  .receipt-fee .receipt-value {
+    font-size: 14px;
+    font-weight: bold;
+  }
+  
+  .receipt-footer { margin-top: 10px; text-align: center; }
+  
+  .receipt-thank-you {
+    margin: 10px 0 5px 0;
+    font-size: 14px;
+    font-weight: bold;
+  }
+  
+  .receipt-note {
+    margin: 5px 0;
+    font-size: 10px;
+    font-style: italic;
+  }
+  
+  /* Remove page margins for printing */
+  @page {
+    margin: 0;
+    size: 80mm auto;
   }
 }

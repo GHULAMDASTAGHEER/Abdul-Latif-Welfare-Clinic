@@ -14,6 +14,18 @@ export default function PatientForm() {
     return `${year}-${month}-${day}`;
   };
 
+  // Get current date-time in DD-MM-YYYY HH:mm:ss format
+  const getNowDateTime = () => {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    return `${dd}-${mm}-${yyyy} ${hh}:${min}:${ss}`;
+  };
+
   const [formData, setFormData] = useState({
     serialNo: "",
     tokenNo: "",
@@ -27,8 +39,24 @@ export default function PatientForm() {
   });
 
   const [showToast, setShowToast] = useState(false);
+  const [printData, setPrintData] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // Print receipt function
+  const printReceipt = (data) => {
+    setPrintData(data);
+    setTimeout(() => {
+      window.print();
+      setPrintData(null);
+    }, 100);
+  };
+
+  // Preview receipt function
+  const handlePreview = () => {
+    setShowPreview(true);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -56,7 +84,19 @@ export default function PatientForm() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    dispatch(createPatient(formData));
+    
+    // Save the current form data for printing
+    const dataToSave = { 
+      ...formData,
+      printedAt: getNowDateTime(),
+      feePaid: formData.isFree ? (formData.freeFee || 0) : formData.fee,
+    };
+    
+    dispatch(createPatient(dataToSave));
+    
+    // Print receipt
+    printReceipt(dataToSave);
+    
     setFormData({
       serialNo: "",
       tokenNo: "",
@@ -227,6 +267,15 @@ export default function PatientForm() {
 
               <button
                 type="button"
+                className="btn btn-preview"
+                onClick={handlePreview}
+              >
+                <span>👁️</span>
+                Preview Receipt
+              </button>
+
+              <button
+                type="button"
                 className="btn btn-secondary"
                 onClick={() => navigate("/patient-list")}
               >
@@ -255,6 +304,97 @@ export default function PatientForm() {
             >
               ×
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Receipt Modal */}
+      {showPreview && (
+        <div className="preview-overlay" onClick={() => setShowPreview(false)}>
+          <div className="preview-modal" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="preview-close"
+              onClick={() => setShowPreview(false)}
+            >
+              ✕
+            </button>
+            
+            <div className="preview-receipt">
+              <div className="receipt-header">
+                <p className="receipt-urdu">براہِ کرم اپنی باری کا انتظار کریں</p>
+                <h2>Abdul Lateef Welfare Clinic</h2>
+                <div className="receipt-divider">────────────────────────</div>
+              </div>
+
+              <div className="token-display">
+                <div className="token-label">Token #</div>
+                <div className="token-number">{formData.tokenNo || '—'}</div>
+              </div>
+
+              <div className="receipt-body">
+                <div className="receipt-row">
+                  <span className="receipt-label">Patient Name</span>
+                  <span className="receipt-value">{formData.patientName || 'N/A'}</span>
+                </div>
+                <div className="receipt-row">
+                  <span className="receipt-label">Date / Time</span>
+                  <span className="receipt-value">{getNowDateTime()}</span>
+                </div>
+                <div className="receipt-row">
+                  <span className="receipt-label">Fee Paid</span>
+                  <span className="receipt-value">Rs. {formData.isFree ? (formData.freeFee || 0) : (formData.fee || 0)}</span>
+                </div>
+                <div className="receipt-row">
+                  <span className="receipt-label">Serial No</span>
+                  <span className="receipt-value">{formData.serialNo || 'N/A'}</span>
+                </div>
+              </div>
+
+              <div className="receipt-footer">
+                <div className="receipt-divider">────────────────────────</div>
+                <p className="receipt-note">Doctor: {formData.doctorName || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Print Receipt - Hidden on screen, visible only when printing */}
+      {printData && (
+        <div className="print-receipt">
+          <div className="receipt-header">
+            <p className="receipt-urdu">براہِ کرم اپنی باری کا انتظار کریں</p>
+            <h2>Abdul Lateef Welfare Clinic</h2>
+            <div className="receipt-divider">────────────────────────</div>
+          </div>
+
+          <div className="token-display">
+            <div className="token-label">Token #</div>
+            <div className="token-number">{printData.tokenNo}</div>
+          </div>
+
+          <div className="receipt-body">
+            <div className="receipt-row">
+              <span className="receipt-label">Patient Name</span>
+              <span className="receipt-value">{printData.patientName}</span>
+            </div>
+            <div className="receipt-row">
+              <span className="receipt-label">Date / Time</span>
+              <span className="receipt-value">{printData.printedAt}</span>
+            </div>
+            <div className="receipt-row">
+              <span className="receipt-label">Fee Paid</span>
+              <span className="receipt-value">Rs. {printData.feePaid}</span>
+            </div>
+            <div className="receipt-row">
+              <span className="receipt-label">Serial No</span>
+              <span className="receipt-value">{printData.serialNo}</span>
+            </div>
+          </div>
+
+          <div className="receipt-footer">
+            <div className="receipt-divider">────────────────────────</div>
+            <p className="receipt-note">Doctor: {printData.doctorName}</p>
           </div>
         </div>
       )}
