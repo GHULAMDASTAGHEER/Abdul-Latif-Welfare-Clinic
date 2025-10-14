@@ -1,24 +1,44 @@
 import React, { useState, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { getPatientsByDate, getRecentPatients, clearAllPatientsLF, deletePatientBySerial } from "../storage/patientsStorage";
 import PatientTable from "../components/PatientTable";
 import { clearAllPatients, deletePatient } from "../redux/slices/patientSlice";
 
 export default function PatientList() {
-  const patientData = useSelector((state) => state.patients);
+  const patientData = useSelector((state) => state.patients); // legacy (not used for loading)
   const [selectedDate, setSelectedDate] = useState("");
+  const [recentLimit, setRecentLimit] = useState(200);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [list, setList] = useState([]);
+  const [showDataModal, setShowDataModal] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   console.log("patientData==>>>", patientData);
 
-  // Filter patients by selected date
+  // Load from localForage
+  React.useEffect(() => {
+    (async () => {
+      if (selectedDate) {
+        const rows = await getPatientsByDate(selectedDate);
+        setList(rows);
+      } else {
+        const recent = await getRecentPatients(recentLimit);
+        setList(recent);
+      }
+    })();
+  }, [selectedDate, recentLimit]);
+
   const filteredPatients = useMemo(() => {
-    if (!selectedDate) {
-      return patientData; // Show all patients if no date selected
-    }
-    return patientData.filter((patient) => patient.date === selectedDate);
-  }, [patientData, selectedDate]);
+    if (!searchQuery) return list;
+    const q = searchQuery.trim().toLowerCase();
+    return list.filter((p) => {
+      const name = String(p.patientName || "").toLowerCase();
+      const serial = String(p.serialNo || "").toLowerCase();
+      return name.includes(q) || serial.includes(q);
+    });
+  }, [list, searchQuery]);
 
   const handleClose = () => {
     navigate("/");
@@ -34,13 +54,61 @@ export default function PatientList() {
 
   const handleClearAllData = () => {
     if (window.confirm("Are you sure you want to delete all patient data? This action cannot be undone.")) {
-      dispatch(clearAllPatients());
+      clearAllPatientsLF();
       setSelectedDate("");
+      setList([]);
     }
   };
 
-  const handleDeletePatient = (serialNo) => {
-    dispatch(deletePatient(serialNo));
+  // Export helpers
+  // const downloadFile = (filename, mime, text) => {
+  //   const blob = new Blob([text], { type: mime });
+  //   const url = URL.createObjectURL(blob);
+  //   const a = document.createElement('a');
+  //   a.href = url;
+  //   a.download = filename;
+  //   document.body.appendChild(a);
+  //   a.click();
+  //   a.remove();
+  //   URL.revokeObjectURL(url);
+  // };
+
+  // const exportJSON = () => {
+  //   const pretty = JSON.stringify(patientData, null, 2);
+  //   downloadFile(`patients_${Date.now()}.json`, 'application/json', pretty);
+  // };
+
+  // const exportCSV = () => {
+  //   const cols = [
+  //     'serialNo','tokenNo','date','patientName','doctorName','fee','isFree','freeFeeSerialNo','freeFee'
+  //   ];
+  //   const header = cols.join(',');
+  //   const rows = patientData.map(p => (
+  //     cols.map(k => {
+  //       const v = p[k] ?? '';
+  //       const s = String(v).replace(/"/g, '""');
+  //       return `"${s}"`;
+  //     }).join(',')
+  //   ));
+  //   const csv = [header, ...rows].join('\n');
+  //   downloadFile(`patients_${Date.now()}.csv`, 'text/csv;charset=utf-8', csv);
+  // };
+
+  // View Data helpers (show currently loaded list)
+  const prettyJSON = useMemo(() => JSON.stringify(list, null, 2), [list]);
+  const copyJSON = async () => {
+    try {
+      await navigator.clipboard.writeText(prettyJSON);
+      alert('Copied to clipboard');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDeletePatient = async (serialNo) => {
+    await deletePatientBySerial(serialNo, selectedDate);
+    const rows = await getPatientsByDate(selectedDate);
+    setList(rows);
   };
 
   return (
@@ -70,23 +138,73 @@ export default function PatientList() {
           }}>
             Filter by Date
           </h3>
-          {patientData.length > 0 && (
-            <button
-              onClick={handleClearAllData}
-              style={{
-                padding: "clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px)",
-                fontSize: "clamp(0.85rem, 2vw, 1rem)",
-                backgroundColor: "#dc3545",
-                color: "white",
-                border: "none",
-                borderRadius: "5px",
-                cursor: "pointer",
-                fontWeight: "bold",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Clear All Data
-            </button>
+          {list.length > 0 && (
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => setShowDataModal(true)}
+                style={{
+                  padding: "clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px)",
+                  fontSize: "clamp(0.85rem, 2vw, 1rem)",
+                  backgroundColor: "#64748b",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                View Data
+              </button>
+              {/* <button
+                onClick={exportCSV}
+                style={{
+                  padding: "clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px)",
+                  fontSize: "clamp(0.85rem, 2vw, 1rem)",
+                  backgroundColor: "#0ea5e9",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Export CSV
+              </button> */}
+              {/* <button
+                onClick={exportJSON}
+                style={{
+                  padding: "clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px)",
+                  fontSize: "clamp(0.85rem, 2vw, 1rem)",
+                  backgroundColor: "#10b981",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Export JSON
+              </button> */}
+              <button
+                onClick={handleClearAllData}
+                style={{
+                  padding: "clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px)",
+                  fontSize: "clamp(0.85rem, 2vw, 1rem)",
+                  backgroundColor: "#dc3545",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Clear All Data
+              </button>
+            </div>
           )}
         </div>
         <div style={{ 
@@ -109,6 +227,24 @@ export default function PatientList() {
               minWidth: "150px",
               flex: "1 1 auto",
               maxWidth: "300px",
+            }}
+          />
+
+          {/* Recent-limit selector removed per request */}
+
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by name or serial no"
+            style={{
+              padding: "clamp(8px, 2vw, 10px)",
+              fontSize: "clamp(0.85rem, 2vw, 1rem)",
+              borderRadius: "5px",
+              border: "1px solid #ccc",
+              outline: "none",
+              flex: "1 1 260px",
+              minWidth: 200,
             }}
           />
           {selectedDate && (
@@ -134,7 +270,7 @@ export default function PatientList() {
             fontSize: "clamp(0.8rem, 2vw, 0.95rem)",
             flexBasis: "100%",
           }}>
-            Showing {filteredPatients.length} of {patientData.length} patients
+            Showing {filteredPatients.length} {selectedDate ? 'records for date' : 'recent records'}
           </span>
         </div>
       </div>
@@ -145,6 +281,37 @@ export default function PatientList() {
         onClose={handleClose}
         onDelete={handleDeletePatient}
       />
+
+      {/* Data Modal */}
+      {showDataModal && (
+        <div 
+          onClick={() => setShowDataModal(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
+          }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: 10, width: 'min(900px, 92vw)',
+              maxHeight: '85vh', display: 'flex', flexDirection: 'column'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '12px 16px', borderBottom: '1px solid #e5e7eb' }}>
+              <strong>Stored Patients ({list.length})</strong>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={copyJSON} style={{ padding: '6px 10px', background: '#0ea5e9', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Copy JSON</button>
+                <button onClick={() => setShowDataModal(false)} style={{ padding: '6px 10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Close</button>
+              </div>
+            </div>
+            <pre style={{ margin: 0, padding: 16, overflow: 'auto', fontSize: 12, lineHeight: 1.4 }}>
+{prettyJSON}
+            </pre>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

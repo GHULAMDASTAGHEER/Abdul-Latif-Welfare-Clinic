@@ -1,11 +1,13 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { persistStore, persistReducer } from "redux-persist";
-import storage from "redux-persist/lib/storage";
+import localForage from "localforage";
 import patientReducer from "./slices/patientSlice";
 
 const persistConfig = {
   key: "root",
-  storage,
+  storage: localForage, // IndexedDB via localForage for large offline storage
+  throttle: 1000,
+  timeout: 0,
 };
 
 const rootReducer = combineReducers({

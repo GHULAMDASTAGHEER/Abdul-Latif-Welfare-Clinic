@@ -3,6 +3,7 @@ import "../css/patientForm.css";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { createPatient } from "../redux/slices/patientSlice";
+import { addPatient } from "../storage/patientsStorage";
 
 export default function PatientForm() {
   // Get today's date in YYYY-MM-DD format
@@ -92,7 +93,11 @@ export default function PatientForm() {
       feePaid: formData.isFree ? (formData.freeFee || 0) : formData.fee,
     };
     
-    dispatch(createPatient(dataToSave));
+    // Save to localForage (IndexedDB) only
+    addPatient(dataToSave);
+    
+    // Optionally still mirror to Redux for immediate UI (commented to keep Redux light)
+    // dispatch(createPatient(dataToSave));
     
     // Print receipt
     printReceipt(dataToSave);
