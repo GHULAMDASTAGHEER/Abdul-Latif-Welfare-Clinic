@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../css/patientForm.css";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -27,17 +27,56 @@ export default function PatientForm() {
     return `${dd}-${mm}-${yyyy} ${hh}:${min}:${ss}`;
   };
 
+  // Get next serial number
+  const getNextSerialNo = () => {
+    const lastSerial = parseInt(localStorage.getItem('lastSerialNo') || '0');
+    return lastSerial + 1;
+  };
+
+  // Get next free fee serial number
+  const getNextFreeFeeSerialNo = () => {
+    const lastFreeSerial = parseInt(localStorage.getItem('lastFreeFeeSerialNo') || '0');
+    return lastFreeSerial + 1;
+  };
+
+  // Get next token number (resets after 24 hours)
+  const getNextTokenNo = () => {
+    const lastTokenDate = localStorage.getItem('lastTokenDate');
+    const lastToken = parseInt(localStorage.getItem('lastTokenNo') || '0');
+    const today = getTodayDate();
+
+    // If date has changed (24 hours passed), reset token to 1
+    if (lastTokenDate !== today) {
+      return 1;
+    }
+    
+    // Otherwise increment
+    return lastToken + 1;
+  };
+
+  const [doctorSlot, setDoctorSlot] = useState(
+    localStorage.getItem('doctorSlot') || 'morning'
+  );
+
   const [formData, setFormData] = useState({
-    serialNo: "",
-    tokenNo: "",
+    serialNo: getNextSerialNo(),
+    tokenNo: getNextTokenNo(),
     date: getTodayDate(), // Set default to today's date
     patientName: "",
-    doctorName: localStorage.getItem('doctorName') || "", // Preserve doctor name
+    doctorName: "", // Will be set based on slot selection
     fee: localStorage.getItem('fee') || "", // Preserve fee
-    freeFee: "",
     freeFeeSerialNo: "",
     isFree: false,
   });
+
+  // Update doctor name based on slot selection
+  useEffect(() => {
+    const morningDoctor = localStorage.getItem('morningDoctor') || "";
+    const eveningDoctor = localStorage.getItem('eveningDoctor') || "";
+    
+    const selectedDoctor = doctorSlot === 'morning' ? morningDoctor : eveningDoctor;
+    setFormData(prev => ({ ...prev, doctorName: selectedDoctor }));
+  }, [doctorSlot]);
 
   const [showToast, setShowToast] = useState(false);
   const [printData, setPrintData] = useState(null);
@@ -63,12 +102,26 @@ export default function PatientForm() {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     
-    // Save doctor name and fee to localStorage when changed
-    if (name === 'doctorName') {
-      localStorage.setItem('doctorName', value);
-    }
+    // Save fee to localStorage when changed
     if (name === 'fee') {
       localStorage.setItem('fee', value);
+    }
+  };
+
+  const handleDoctorSlotChange = (slot) => {
+    setDoctorSlot(slot);
+    localStorage.setItem('doctorSlot', slot);
+  };
+
+  const handleDoctorNameChange = (e) => {
+    const value = e.target.value;
+    setFormData({ ...formData, doctorName: value });
+    
+    // Save to the appropriate slot in localStorage
+    if (doctorSlot === 'morning') {
+      localStorage.setItem('morningDoctor', value);
+    } else {
+      localStorage.setItem('eveningDoctor', value);
     }
   };
 
@@ -77,9 +130,8 @@ export default function PatientForm() {
     setFormData({ 
       ...formData, 
       isFree: isChecked,
-      fee: isChecked ? "" : formData.fee,
-      freeFee: isChecked ? formData.freeFee : "",
-      freeFeeSerialNo: isChecked ? formData.freeFeeSerialNo : "",
+      fee: isChecked ? "" : (localStorage.getItem('fee') || ""),
+      freeFeeSerialNo: isChecked ? getNextFreeFeeSerialNo() : "",
     });
   };
 
@@ -90,7 +142,7 @@ export default function PatientForm() {
     const dataToSave = { 
       ...formData,
       printedAt: getNowDateTime(),
-      feePaid: formData.isFree ? (formData.freeFee || 0) : formData.fee,
+      feePaid: formData.isFree ? 0 : formData.fee,
     };
     
     // Save to localForage (IndexedDB) only
@@ -99,17 +151,36 @@ export default function PatientForm() {
     // Optionally still mirror to Redux for immediate UI (commented to keep Redux light)
     // dispatch(createPatient(dataToSave));
     
+    // Update serial numbers and token in localStorage
+    localStorage.setItem('lastSerialNo', formData.serialNo.toString());
+    localStorage.setItem('lastTokenNo', formData.tokenNo.toString());
+    localStorage.setItem('lastTokenDate', formData.date);
+    
+    if (formData.isFree && formData.freeFeeSerialNo) {
+      localStorage.setItem('lastFreeFeeSerialNo', formData.freeFeeSerialNo.toString());
+    }
+    
     // Print receipt
     printReceipt(dataToSave);
     
+    // Get the doctor name for the current slot
+    const morningDoctor = localStorage.getItem('morningDoctor') || "";
+    const eveningDoctor = localStorage.getItem('eveningDoctor') || "";
+    const currentDoctor = doctorSlot === 'morning' ? morningDoctor : eveningDoctor;
+    
+    // Calculate next token number
+    const currentDate = formData.date;
+    const nextTokenNo = currentDate === getTodayDate() 
+      ? parseInt(formData.tokenNo) + 1 
+      : 1;
+    
     setFormData({
-      serialNo: "",
-      tokenNo: "",
+      serialNo: getNextSerialNo() + 1, // Next serial number
+      tokenNo: nextTokenNo, // Next token number
       date: getTodayDate(), // Reset to today's date after save
       patientName: "",
-      doctorName: localStorage.getItem('doctorName') || "", // Keep doctor name
+      doctorName: currentDoctor, // Keep doctor name based on slot
       fee: localStorage.getItem('fee') || "", // Keep fee
-      freeFee: "",
       freeFeeSerialNo: "",
       isFree: false,
     });
@@ -135,25 +206,27 @@ export default function PatientForm() {
               <h3 className="section-title">Basic Information</h3>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Serial Number</label>
+                  <label>Serial Number (Auto)</label>
                   <input
                     type="text"
                     name="serialNo"
-                    placeholder="Enter serial number"
+                    placeholder="Auto-generated"
                     value={formData.serialNo}
-                    onChange={handleChange}
-                    required
+                    readOnly
+                    style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Token No</label>
+                  <label>Token No (Auto)</label>
                   <input
-                    type="text"
+                    type="number"
                     name="tokenNo"
-                    placeholder="Enter token no"
+                    placeholder="Auto-generated"
                     value={formData.tokenNo}
                     onChange={handleChange}
                     required
+                    style={{ backgroundColor: '#f9f9f9' }}
+                    title="Auto-generated token number (can be edited manually)"
                   />
                 </div>
                 <div className="form-group">
@@ -172,6 +245,8 @@ export default function PatientForm() {
             {/* Patient & Doctor Information Section */}
             <div className="form-section">
               <h3 className="section-title">Patient & Doctor Details</h3>
+              
+              {/* Patient Name */}
               <div className="form-row">
                 <div className="form-group">
                   <label>Patient Name</label>
@@ -184,14 +259,49 @@ export default function PatientForm() {
                     required
                   />
                 </div>
+              </div>
+
+              {/* Doctor Slot Selection */}
+              <div className="form-row" style={{ marginTop: '15px' }}>
+                <div className="form-group" style={{ width: '100%' }}>
+                  <label>Doctor Slot</label>
+                  <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
+                    <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="doctorSlot"
+                        value="morning"
+                        checked={doctorSlot === 'morning'}
+                        onChange={() => handleDoctorSlotChange('morning')}
+                        style={{ marginRight: '8px' }}
+                      />
+                      <span>Morning Slot</span>
+                    </label>
+                    <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="doctorSlot"
+                        value="evening"
+                        checked={doctorSlot === 'evening'}
+                        onChange={() => handleDoctorSlotChange('evening')}
+                        style={{ marginRight: '8px' }}
+                      />
+                      <span>Evening Slot</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Doctor Name */}
+              <div className="form-row">
                 <div className="form-group">
-                  <label>Doctor Name</label>
+                  <label>Doctor Name ({doctorSlot === 'morning' ? 'Morning' : 'Evening'})</label>
                   <input
                     type="text"
                     name="doctorName"
-                    placeholder="Enter doctor name"
+                    placeholder={`Enter ${doctorSlot} doctor name`}
                     value={formData.doctorName}
-                    onChange={handleChange}
+                    onChange={handleDoctorNameChange}
                     required
                   />
                 </div>
@@ -234,31 +344,19 @@ export default function PatientForm() {
                   </div>
                 )}
 
-                {/* Free Fee Fields - Show only when free */}
+                {/* Free Fee Serial No - Show only when free */}
                 {formData.isFree && (
-                  <>
-                    <div className="form-group">
-                      <label>Free Fee Serial No</label>
-                      <input
-                        type="text"
-                        name="freeFeeSerialNo"
-                        placeholder="Enter free fee serial no"
-                        value={formData.freeFeeSerialNo}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Free Fee Amount (Optional)</label>
-                      <input
-                        type="number"
-                        name="freeFee"
-                        placeholder="Enter free fee amount"
-                        value={formData.freeFee}
-                        onChange={handleChange}
-                      />
-                    </div>
-                  </>
+                  <div className="form-group">
+                    <label>Free Fee Serial No (Auto)</label>
+                    <input
+                      type="text"
+                      name="freeFeeSerialNo"
+                      placeholder="Auto-generated"
+                      value={formData.freeFeeSerialNo}
+                      readOnly
+                      style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
+                    />
+                  </div>
                 )}
               </div>
             </div>
@@ -347,7 +445,7 @@ export default function PatientForm() {
                 </div>
                 <div className="receipt-row">
                   <span className="receipt-label">Fee Paid</span>
-                  <span className="receipt-value">Rs. {formData.isFree ? (formData.freeFee || 0) : (formData.fee || 0)}</span>
+                  <span className="receipt-value">Rs. {formData.isFree ? 0 : (formData.fee || 0)}</span>
                 </div>
                 <div className="receipt-row">
                   <span className="receipt-label">Serial No</span>
