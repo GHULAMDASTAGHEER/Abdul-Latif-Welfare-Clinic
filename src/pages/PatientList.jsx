@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import "../css/PatientList.css";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { getPatientsByDate, getRecentPatients, clearAllPatientsLF, deletePatientBySerial } from "../storage/patientsStorage";
@@ -207,7 +208,7 @@ export default function PatientList() {
             </div>
           )}
         </div>
-        <div style={{ 
+        <div className="filter-bar" style={{ 
           display: "flex", 
           gap: "10px", 
           alignItems: "center",
