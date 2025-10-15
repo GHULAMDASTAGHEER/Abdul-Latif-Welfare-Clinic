@@ -197,8 +197,11 @@ export default function PatientForm() {
   return (
     <>
       <div className="form-container">
+        <div className="form-header-bar">
+          <h2 className="form-title">Abdul Latif Welfare Clinic - Patient Registration</h2>
+          <button onClick={() => navigate("/dashboard")} className="btn-dashboard">Dashboard</button>
+        </div>
         <div className="form-card">
-          <h2 className="form-title">Abdul Latif Welfare Clinic</h2>
 
           <form onSubmit={handleSubmit}>
             {/* Basic Information Section */}

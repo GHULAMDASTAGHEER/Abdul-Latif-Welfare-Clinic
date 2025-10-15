@@ -1,0 +1,161 @@
+.cash-history-container {
+  min-height: 100vh;
+  background: #f5f7fa;
+  padding: 30px;
+}
+
+.summary-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+.summary-card {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition: all 0.3s;
+}
+
+.summary-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.summary-card.inflow {
+  border-left: 5px solid #059669;
+}
+
+.summary-card.outflow {
+  border-left: 5px solid #dc2626;
+}
+
+.summary-card.balance {
+  border-left: 5px solid #667eea;
+}
+
+.filters-section {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 30px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.type-filter {
+  padding: 10px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+}
+
+.type-filter:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.transactions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.transaction-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition: all 0.3s;
+}
+
+.transaction-card:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.transaction-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.transaction-details {
+  flex: 1;
+}
+
+.transaction-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.transaction-header h4 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.transaction-type {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.transaction-info p {
+  margin: 5px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.transaction-date {
+  font-size: 13px !important;
+  color: #999 !important;
+}
+
+.transaction-amount {
+  font-size: 24px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .transaction-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .transaction-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .filters-section {
+    flex-direction: column;
+  }
+  
+  .date-filter,
+  .type-filter {
+    width: 100%;
+  }
+}
+
