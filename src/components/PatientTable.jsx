@@ -53,7 +53,6 @@ const PatientTable = ({ patientData, onClose, onDelete }) => {
               <th>Doctor Name</th>
               <th>Fee (Rs)</th>
               <th>Free Fee Serial No</th>
-              <th>Free Fee Amount</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -74,14 +73,7 @@ const PatientTable = ({ patientData, onClose, onDelete }) => {
                 </td>
                 <td data-label="Free Fee Serial No">
                   {patient.freeFeeSerialNo ? (
-                    <span className="serial-badge">#{patient.freeFeeSerialNo}</span>
-                  ) : (
-                    <span className="empty-field">-</span>
-                  )}
-                </td>
-                <td data-label="Free Fee Amount">
-                  {patient.freeFee ? (
-                    <span className="free-amount">₹{patient.freeFee}</span>
+                    <span className="serial-badge">{patient.freeFeeSerialNo}</span>
                   ) : (
                     <span className="empty-field">-</span>
                   )}
