@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import "../css/PatientList.css";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { getPatientsByDate, getRecentPatients, clearAllPatientsLF, deletePatientBySerial } from "../storage/patientsStorage";
+import { getPatientsByDate, getRecentPatients, clearAllPatientsLF, deletePatientBySerial, exportAllData, importAllData } from "../storage/patientsStorage";
 import PatientTable from "../components/PatientTable";
 import { clearAllPatients, deletePatient } from "../redux/slices/patientSlice";
 
@@ -107,9 +107,67 @@ export default function PatientList() {
   };
 
   const handleDeletePatient = async (serialNo) => {
-    await deletePatientBySerial(serialNo, selectedDate);
-    const rows = await getPatientsByDate(selectedDate);
-    setList(rows);
+    // Find the patient to get their date
+    const patient = list.find(p => p.serialNo === serialNo);
+    if (!patient) return;
+    
+    // Delete using the patient's actual date
+    await deletePatientBySerial(serialNo, patient.date);
+    
+    // Reload the list based on current filter
+    if (selectedDate) {
+      const rows = await getPatientsByDate(selectedDate);
+      setList(rows);
+    } else {
+      const recent = await getRecentPatients(recentLimit);
+      setList(recent);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const data = await exportAllData();
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `clinic-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      alert('Data exported successfully!');
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Export failed: ' + error.message);
+    }
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      await importAllData(data);
+      
+      if (selectedDate) {
+        const rows = await getPatientsByDate(selectedDate);
+        setList(rows);
+      } else {
+        const recent = await getRecentPatients(recentLimit);
+        setList(recent);
+      }
+      
+      alert('Data imported successfully!');
+      e.target.value = '';
+    } catch (error) {
+      console.error('Import failed:', error);
+      alert('Import failed: ' + error.message);
+      e.target.value = '';
+    }
   };
 
   return (
@@ -139,74 +197,84 @@ export default function PatientList() {
           }}>
             Filter by Date
           </h3>
-          {list.length > 0 && (
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button
-                onClick={() => setShowDataModal(true)}
-                style={{
-                  padding: "clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px)",
-                  fontSize: "clamp(0.85rem, 2vw, 1rem)",
-                  backgroundColor: "#64748b",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                View Data
-              </button>
-              {/* <button
-                onClick={exportCSV}
-                style={{
-                  padding: "clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px)",
-                  fontSize: "clamp(0.85rem, 2vw, 1rem)",
-                  backgroundColor: "#0ea5e9",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Export CSV
-              </button> */}
-              {/* <button
-                onClick={exportJSON}
-                style={{
-                  padding: "clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px)",
-                  fontSize: "clamp(0.85rem, 2vw, 1rem)",
-                  backgroundColor: "#10b981",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Export JSON
-              </button> */}
-              <button
-                onClick={handleClearAllData}
-                style={{
-                  padding: "clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px)",
-                  fontSize: "clamp(0.85rem, 2vw, 1rem)",
-                  backgroundColor: "#dc3545",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Clear All Data
-              </button>
-            </div>
-          )}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleExport}
+              style={{
+                padding: "clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px)",
+                fontSize: "clamp(0.85rem, 2vw, 1rem)",
+                backgroundColor: "#10b981",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+                fontWeight: "bold",
+                whiteSpace: "nowrap",
+              }}
+            >
+              📥 Export Backup
+            </button>
+            
+            <label
+              style={{
+                padding: "clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px)",
+                fontSize: "clamp(0.85rem, 2vw, 1rem)",
+                backgroundColor: "#0ea5e9",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+                fontWeight: "bold",
+                whiteSpace: "nowrap",
+                display: "inline-block",
+              }}
+            >
+              📤 Import Backup
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleImport}
+                style={{ display: 'none' }}
+              />
+            </label>
+            
+            {list.length > 0 && (
+              <>
+                <button
+                  onClick={() => setShowDataModal(true)}
+                  style={{
+                    padding: "clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px)",
+                    fontSize: "clamp(0.85rem, 2vw, 1rem)",
+                    backgroundColor: "#64748b",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  View Data
+                </button>
+                <button
+                  onClick={handleClearAllData}
+                  style={{
+                    padding: "clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px)",
+                    fontSize: "clamp(0.85rem, 2vw, 1rem)",
+                    backgroundColor: "#dc3545",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Clear All Data
+                </button>
+              </>
+            )}
+          </div>
         </div>
         <div className="filter-bar" style={{ 
           display: "flex", 
