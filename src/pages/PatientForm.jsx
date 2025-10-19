@@ -103,20 +103,21 @@ export default function PatientForm() {
         <style>
           @page {
             size: A4;
-            margin: 3mm;
           }
           @media print {
             body {
               margin: 0;
               padding: 0;
               width: 100%;
+              justify-content: center;
+              align-items: center;
             }
           }
           body {
             font-family: 'Courier New', monospace;
-            font-size: 12px;
+            font-size: 13px;
             margin: 0;
-            padding: 3px;
+            padding: 0;
             width: 100%;
             line-height: 1.0;
             text-align: center;
@@ -141,7 +142,7 @@ export default function PatientForm() {
           }
           .urdu-text {
             font-size: 11px;
-            margin: 1px 0;
+            margin: 0;
             color: #000000;
           }
           .divider {
@@ -150,7 +151,7 @@ export default function PatientForm() {
             color: #000000;
           }
           .patient-info {
-            text-align: left;
+            text-align: center;
             margin: 2px 0;
             font-size: 12px;
             color: #000000;
@@ -168,9 +169,7 @@ export default function PatientForm() {
           <div class="urdu-text">براہِ کرم اپنی باری کا انتظار کریں</div>
           <div class="clinic-name">Abdul Lateef Welfare Clinic</div>
           <div class="divider">────────────────────────</div>
-          
           <div class="token-number">Token # ${data.tokenNo}</div>
-          
           <div class="patient-info">
             Patient Name: ${data.patientName}<br>
             Date / Time: ${data.printedAt}<br>
