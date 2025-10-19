@@ -103,7 +103,7 @@ export default function PatientForm() {
         <style>
           @page {
             size: A4;
-            margin: 5mm;
+            margin: 3mm;
           }
           @media print {
             body {
@@ -114,44 +114,52 @@ export default function PatientForm() {
           }
           body {
             font-family: 'Courier New', monospace;
-            font-size: 10px;
+            font-size: 12px;
             margin: 0;
-            padding: 5px;
+            padding: 3px;
             width: 100%;
-            line-height: 1.1;
+            line-height: 1.0;
             text-align: center;
+            color: #000000;
           }
           .receipt-content {
             white-space: pre-line;
             text-align: center;
+            color: #000000;
           }
           .token-number {
-            font-size: 16px;
+            font-size: 20px;
             font-weight: bold;
-            margin: 5px 0;
+            margin: 2px 0;
+            color: #000000;
           }
           .clinic-name {
-            font-size: 12px;
+            font-size: 14px;
             font-weight: bold;
-            margin: 3px 0;
+            margin: 1px 0;
+            color: #000000;
           }
           .urdu-text {
-            font-size: 9px;
-            margin: 3px 0;
+            font-size: 11px;
+            margin: 1px 0;
+            color: #000000;
           }
           .divider {
-            margin: 3px 0;
-            font-size: 10px;
+            margin: 1px 0;
+            font-size: 12px;
+            color: #000000;
           }
           .patient-info {
             text-align: left;
-            margin: 5px 0;
-            font-size: 10px;
+            margin: 2px 0;
+            font-size: 12px;
+            color: #000000;
           }
           .doctor-info {
             text-align: center;
-            margin-top: 5px;
-            font-size: 10px;
+            margin-top: 2px;
+            font-size: 12px;
+            color: #000000;
           }
         </style>
       </head>
@@ -167,11 +175,9 @@ export default function PatientForm() {
             Patient Name: ${data.patientName}<br>
             Date / Time: ${data.printedAt}<br>
             Fee Paid: Rs. ${data.feePaid}<br>
-            Serial No: ${data.serialNo}
+            Serial No: ${data.serialNo}<br>
+            Doctor: ${data.doctorName}
           </div>
-          
-          <div class="divider">────────────────────────</div>
-          <div class="doctor-info">Doctor: ${data.doctorName}</div>
         </div>
         
         <script>
