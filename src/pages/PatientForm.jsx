@@ -109,8 +109,6 @@ export default function PatientForm() {
               margin: 0;
               padding: 0;
               width: 100%;
-              justify-content: center;
-              align-items: center;
             }
           }
           body {
@@ -135,13 +133,13 @@ export default function PatientForm() {
             color: #000000;
           }
           .clinic-name {
-            font-size: 14px;
+            font-size: 18px;
             font-weight: bold;
             margin: 1px 0;
             color: #000000;
           }
           .urdu-text {
-            font-size: 11px;
+            font-size: 15px;
             margin: 0;
             color: #000000;
           }
@@ -151,13 +149,13 @@ export default function PatientForm() {
             color: #000000;
           }
           .patient-info {
-            text-align: center;
+            text-align: left;
             margin: 2px 0;
             font-size: 12px;
             color: #000000;
           }
           .doctor-info {
-            text-align: center;
+            text-align: left;
             margin-top: 2px;
             font-size: 12px;
             color: #000000;
