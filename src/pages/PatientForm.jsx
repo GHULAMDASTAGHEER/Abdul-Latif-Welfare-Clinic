@@ -102,23 +102,23 @@ export default function PatientForm() {
         <title>Receipt Print</title>
         <style>
           @page {
-            size: 80mm auto;
-            margin: 0;
+            size: A4;
+            margin: 10mm;
           }
           @media print {
             body {
               margin: 0;
               padding: 0;
-              width: 80mm;
+              width: 100%;
             }
           }
           body {
             font-family: 'Courier New', monospace;
-            font-size: 11px;
+            font-size: 14px;
             margin: 0;
-            padding: 8px;
-            width: 80mm;
-            line-height: 1.2;
+            padding: 20px;
+            width: 100%;
+            line-height: 1.4;
             text-align: center;
           }
           .receipt-content {
@@ -126,29 +126,32 @@ export default function PatientForm() {
             text-align: center;
           }
           .token-number {
-            font-size: 18px;
+            font-size: 28px;
+            font-weight: bold;
+            margin: 20px 0;
+          }
+          .clinic-name {
+            font-size: 20px;
             font-weight: bold;
             margin: 10px 0;
           }
-          .clinic-name {
-            font-size: 14px;
-            font-weight: bold;
-            margin: 5px 0;
-          }
           .urdu-text {
-            font-size: 10px;
-            margin: 5px 0;
+            font-size: 14px;
+            margin: 10px 0;
           }
           .divider {
-            margin: 5px 0;
+            margin: 10px 0;
+            font-size: 16px;
           }
           .patient-info {
             text-align: left;
-            margin: 5px 0;
+            margin: 15px 0;
+            font-size: 16px;
           }
           .doctor-info {
             text-align: center;
-            margin-top: 10px;
+            margin-top: 20px;
+            font-size: 16px;
           }
         </style>
       </head>
