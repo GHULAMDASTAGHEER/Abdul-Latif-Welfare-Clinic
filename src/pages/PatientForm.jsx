@@ -87,65 +87,106 @@ export default function PatientForm() {
 
   const [showToast, setShowToast] = useState(false);
   const [printData, setPrintData] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const printReceipt = (data) => {
-    const receiptContent = `
-      براہِ کرم اپنی باری کا انتظار کریں
-      Abdul Lateef Welfare Clinic
-      ────────────────────────
-      
-      Token # ${data.tokenNo}
-      
-      Patient Name: ${data.patientName}
-      Date / Time: ${data.printedAt}
-      Fee Paid: Rs. ${data.feePaid}
-      Serial No: ${data.serialNo}
-      
-      ────────────────────────
-      Doctor: ${data.doctorName}
-    `;
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank', 'width=300,height=400');
     
-    // Create a hidden iframe for printing
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.left = '-9999px';
-    iframe.style.top = '-9999px';
-    iframe.style.width = '80mm';
-    iframe.style.height = 'auto';
-    
-    document.body.appendChild(iframe);
-    
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-    iframeDoc.open();
-    iframeDoc.write(`
+    const receiptHTML = `
       <!DOCTYPE html>
       <html>
       <head>
+        <title>Receipt Print</title>
         <style>
-          @page { size: 80mm auto; margin: 0; }
-          body { 
-            font-family: monospace; 
-            font-size: 12px; 
-            margin: 0; 
-            padding: 5px;
+          @page {
+            size: 80mm auto;
+            margin: 0;
+          }
+          @media print {
+            body {
+              margin: 0;
+              padding: 0;
+              width: 80mm;
+            }
+          }
+          body {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            margin: 0;
+            padding: 8px;
+            width: 80mm;
+            line-height: 1.2;
+            text-align: center;
+          }
+          .receipt-content {
             white-space: pre-line;
             text-align: center;
           }
+          .token-number {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+          }
+          .clinic-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin: 5px 0;
+          }
+          .urdu-text {
+            font-size: 10px;
+            margin: 5px 0;
+          }
+          .divider {
+            margin: 5px 0;
+          }
+          .patient-info {
+            text-align: left;
+            margin: 5px 0;
+          }
+          .doctor-info {
+            text-align: center;
+            margin-top: 10px;
+          }
         </style>
       </head>
-      <body>${receiptContent}</body>
+      <body>
+        <div class="receipt-content">
+          <div class="urdu-text">براہِ کرم اپنی باری کا انتظار کریں</div>
+          <div class="clinic-name">Abdul Lateef Welfare Clinic</div>
+          <div class="divider">────────────────────────</div>
+          
+          <div class="token-number">Token # ${data.tokenNo}</div>
+          
+          <div class="patient-info">
+            Patient Name: ${data.patientName}<br>
+            Date / Time: ${data.printedAt}<br>
+            Fee Paid: Rs. ${data.feePaid}<br>
+            Serial No: ${data.serialNo}
+          </div>
+          
+          <div class="divider">────────────────────────</div>
+          <div class="doctor-info">Doctor: ${data.doctorName}</div>
+        </div>
+        
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+              setTimeout(function() {
+                window.close();
+              }, 500);
+            }, 500);
+          };
+        </script>
+      </body>
       </html>
-    `);
-    iframeDoc.close();
+    `;
     
-    setTimeout(() => {
-      iframe.contentWindow.print();
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 1000);
-    }, 100);
+    printWindow.document.write(receiptHTML);
+    printWindow.document.close();
   };
 
   const handleChange = (e) => {
@@ -437,6 +478,15 @@ export default function PatientForm() {
 
               <button
                 type="button"
+                className="btn btn-preview"
+                onClick={() => setShowPreview(true)}
+              >
+                <span>👁️</span>
+                Show Preview
+              </button>
+
+              <button
+                type="button"
                 className="btn btn-secondary"
                 onClick={() => navigate("/patient-list")}
               >
@@ -464,6 +514,57 @@ export default function PatientForm() {
             >
               ×
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {showPreview && (
+        <div className="preview-overlay" onClick={() => setShowPreview(false)}>
+          <div className="preview-modal" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="preview-close"
+              onClick={() => setShowPreview(false)}
+            >
+              ✕
+            </button>
+            
+            <div className="preview-receipt">
+              <div className="receipt-header">
+                <p className="receipt-urdu">براہِ کرم اپنی باری کا انتظار کریں</p>
+                <h2>Abdul Lateef Welfare Clinic</h2>
+                <div className="receipt-divider">────────────────────────</div>
+              </div>
+
+              <div className="token-display">
+                <div className="token-label">Token #</div>
+                <div className="token-number">{formData.tokenNo || '—'}</div>
+              </div>
+
+              <div className="receipt-body">
+                <div className="receipt-row">
+                  <span className="receipt-label">Patient Name</span>
+                  <span className="receipt-value">{formData.patientName || 'N/A'}</span>
+                </div>
+                <div className="receipt-row">
+                  <span className="receipt-label">Date / Time</span>
+                  <span className="receipt-value">{getNowDateTime()}</span>
+                </div>
+                <div className="receipt-row">
+                  <span className="receipt-label">Fee Paid</span>
+                  <span className="receipt-value">Rs. {formData.isFree ? 0 : (formData.fee || 0)}</span>
+                </div>
+                <div className="receipt-row">
+                  <span className="receipt-label">Serial No</span>
+                  <span className="receipt-value">{formData.serialNo || 'N/A'}</span>
+                </div>
+              </div>
+
+              <div className="receipt-footer">
+                <div className="receipt-divider">────────────────────────</div>
+                <p className="receipt-note">Doctor: {formData.doctorName || 'N/A'}</p>
+              </div>
+            </div>
           </div>
         </div>
       )}
