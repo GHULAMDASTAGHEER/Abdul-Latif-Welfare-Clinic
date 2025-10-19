@@ -103,7 +103,7 @@ export default function PatientForm() {
         <style>
           @page {
             size: A4;
-            margin: 10mm;
+            margin: 5mm;
           }
           @media print {
             body {
@@ -114,11 +114,11 @@ export default function PatientForm() {
           }
           body {
             font-family: 'Courier New', monospace;
-            font-size: 14px;
+            font-size: 10px;
             margin: 0;
-            padding: 20px;
+            padding: 5px;
             width: 100%;
-            line-height: 1.4;
+            line-height: 1.1;
             text-align: center;
           }
           .receipt-content {
@@ -126,32 +126,32 @@ export default function PatientForm() {
             text-align: center;
           }
           .token-number {
-            font-size: 28px;
+            font-size: 16px;
             font-weight: bold;
-            margin: 20px 0;
+            margin: 5px 0;
           }
           .clinic-name {
-            font-size: 20px;
+            font-size: 12px;
             font-weight: bold;
-            margin: 10px 0;
+            margin: 3px 0;
           }
           .urdu-text {
-            font-size: 14px;
-            margin: 10px 0;
+            font-size: 9px;
+            margin: 3px 0;
           }
           .divider {
-            margin: 10px 0;
-            font-size: 16px;
+            margin: 3px 0;
+            font-size: 10px;
           }
           .patient-info {
             text-align: left;
-            margin: 15px 0;
-            font-size: 16px;
+            margin: 5px 0;
+            font-size: 10px;
           }
           .doctor-info {
             text-align: center;
-            margin-top: 20px;
-            font-size: 16px;
+            margin-top: 5px;
+            font-size: 10px;
           }
         </style>
       </head>
