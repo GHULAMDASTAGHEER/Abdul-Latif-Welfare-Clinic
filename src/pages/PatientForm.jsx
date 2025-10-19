@@ -39,18 +39,18 @@ export default function PatientForm() {
     return lastFreeSerial + 1;
   };
 
-  // Get next token number (resets after 24 hours)
-  const getNextTokenNo = () => {
-    const lastTokenDate = localStorage.getItem('lastTokenDate');
-    const lastToken = parseInt(localStorage.getItem('lastTokenNo') || '0');
+  const getNextTokenNo = (slot) => {
+    const tokenDateKey = slot === 'morning' ? 'lastMorningTokenDate' : 'lastEveningTokenDate';
+    const tokenNoKey = slot === 'morning' ? 'lastMorningTokenNo' : 'lastEveningTokenNo';
+    
+    const lastTokenDate = localStorage.getItem(tokenDateKey);
+    const lastToken = parseInt(localStorage.getItem(tokenNoKey) || '0');
     const today = getTodayDate();
 
-    // If date has changed (24 hours passed), reset token to 1
     if (lastTokenDate !== today) {
       return 1;
     }
     
-    // Otherwise increment
     return lastToken + 1;
   };
 
@@ -58,44 +58,94 @@ export default function PatientForm() {
     localStorage.getItem('doctorSlot') || 'morning'
   );
 
+  const initialSlot = localStorage.getItem('doctorSlot') || 'morning';
+  
   const [formData, setFormData] = useState({
     serialNo: getNextSerialNo(),
-    tokenNo: getNextTokenNo(),
-    date: getTodayDate(), // Set default to today's date
+    tokenNo: getNextTokenNo(initialSlot),
+    date: getTodayDate(),
     patientName: "",
-    doctorName: "", // Will be set based on slot selection
-    fee: localStorage.getItem('fee') || "", // Preserve fee
+    doctorName: "",
+    fee: localStorage.getItem('fee') || "",
     freeFeeSerialNo: "",
     isFree: false,
   });
 
-  // Update doctor name based on slot selection
   useEffect(() => {
     const morningDoctor = localStorage.getItem('morningDoctor') || "";
     const eveningDoctor = localStorage.getItem('eveningDoctor') || "";
     
     const selectedDoctor = doctorSlot === 'morning' ? morningDoctor : eveningDoctor;
-    setFormData(prev => ({ ...prev, doctorName: selectedDoctor }));
+    const tokenNo = getNextTokenNo(doctorSlot);
+    
+    setFormData(prev => ({ 
+      ...prev, 
+      doctorName: selectedDoctor,
+      tokenNo: tokenNo
+    }));
   }, [doctorSlot]);
 
   const [showToast, setShowToast] = useState(false);
   const [printData, setPrintData] = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Print receipt function
   const printReceipt = (data) => {
-    setPrintData(data);
+    const receiptContent = `
+      براہِ کرم اپنی باری کا انتظار کریں
+      Abdul Lateef Welfare Clinic
+      ────────────────────────
+      
+      Token # ${data.tokenNo}
+      
+      Patient Name: ${data.patientName}
+      Date / Time: ${data.printedAt}
+      Fee Paid: Rs. ${data.feePaid}
+      Serial No: ${data.serialNo}
+      
+      ────────────────────────
+      Doctor: ${data.doctorName}
+    `;
+    
+    // Create a hidden iframe for printing
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.left = '-9999px';
+    iframe.style.top = '-9999px';
+    iframe.style.width = '80mm';
+    iframe.style.height = 'auto';
+    
+    document.body.appendChild(iframe);
+    
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+    iframeDoc.open();
+    iframeDoc.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          @page { size: 80mm auto; margin: 0; }
+          body { 
+            font-family: monospace; 
+            font-size: 12px; 
+            margin: 0; 
+            padding: 5px;
+            white-space: pre-line;
+            text-align: center;
+          }
+        </style>
+      </head>
+      <body>${receiptContent}</body>
+      </html>
+    `);
+    iframeDoc.close();
+    
     setTimeout(() => {
-      window.print();
-      setPrintData(null);
+      iframe.contentWindow.print();
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
     }, 100);
-  };
-
-  // Preview receipt function
-  const handlePreview = () => {
-    setShowPreview(true);
   };
 
   const handleChange = (e) => {
@@ -138,6 +188,22 @@ export default function PatientForm() {
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    // Validate required fields
+    if (!formData.patientName.trim()) {
+      alert('Patient Name is required!');
+      return;
+    }
+    
+    if (!formData.doctorName.trim()) {
+      alert('Doctor Name is required!');
+      return;
+    }
+    
+    if (!formData.isFree && (!formData.fee || formData.fee <= 0)) {
+      alert('Fee Amount is required for paid patients!');
+      return;
+    }
+    
     // Save the current form data for printing
     const dataToSave = { 
       ...formData,
@@ -151,10 +217,13 @@ export default function PatientForm() {
     // Optionally still mirror to Redux for immediate UI (commented to keep Redux light)
     // dispatch(createPatient(dataToSave));
     
-    // Update serial numbers and token in localStorage
     localStorage.setItem('lastSerialNo', formData.serialNo.toString());
-    localStorage.setItem('lastTokenNo', formData.tokenNo.toString());
-    localStorage.setItem('lastTokenDate', formData.date);
+    
+    const tokenDateKey = doctorSlot === 'morning' ? 'lastMorningTokenDate' : 'lastEveningTokenDate';
+    const tokenNoKey = doctorSlot === 'morning' ? 'lastMorningTokenNo' : 'lastEveningTokenNo';
+    
+    localStorage.setItem(tokenNoKey, formData.tokenNo.toString());
+    localStorage.setItem(tokenDateKey, formData.date);
     
     if (formData.isFree && formData.freeFeeSerialNo) {
       localStorage.setItem('lastFreeFeeSerialNo', formData.freeFeeSerialNo.toString());
@@ -163,24 +232,22 @@ export default function PatientForm() {
     // Print receipt
     printReceipt(dataToSave);
     
-    // Get the doctor name for the current slot
     const morningDoctor = localStorage.getItem('morningDoctor') || "";
     const eveningDoctor = localStorage.getItem('eveningDoctor') || "";
     const currentDoctor = doctorSlot === 'morning' ? morningDoctor : eveningDoctor;
     
-    // Calculate next token number
     const currentDate = formData.date;
     const nextTokenNo = currentDate === getTodayDate() 
       ? parseInt(formData.tokenNo) + 1 
-      : 1;
+      : getNextTokenNo(doctorSlot);
     
     setFormData({
-      serialNo: getNextSerialNo() + 1, // Next serial number
-      tokenNo: nextTokenNo, // Next token number
-      date: getTodayDate(), // Reset to today's date after save
+      serialNo: getNextSerialNo() + 1,
+      tokenNo: nextTokenNo,
+      date: getTodayDate(),
       patientName: "",
-      doctorName: currentDoctor, // Keep doctor name based on slot
-      fee: localStorage.getItem('fee') || "", // Keep fee
+      doctorName: currentDoctor,
+      fee: localStorage.getItem('fee') || "",
       freeFeeSerialNo: "",
       isFree: false,
     });
@@ -370,15 +437,6 @@ export default function PatientForm() {
 
               <button
                 type="button"
-                className="btn btn-preview"
-                onClick={handlePreview}
-              >
-                <span>👁️</span>
-                Preview Receipt
-              </button>
-
-              <button
-                type="button"
                 className="btn btn-secondary"
                 onClick={() => navigate("/patient-list")}
               >
@@ -390,7 +448,6 @@ export default function PatientForm() {
         </div>
       </div>
 
-      {/* Success Toast */}
       {showToast && (
         <div className="toast-container">
           <div className="toast toast-success">
@@ -411,96 +468,6 @@ export default function PatientForm() {
         </div>
       )}
 
-      {/* Preview Receipt Modal */}
-      {showPreview && (
-        <div className="preview-overlay" onClick={() => setShowPreview(false)}>
-          <div className="preview-modal" onClick={(e) => e.stopPropagation()}>
-            <button 
-              className="preview-close"
-              onClick={() => setShowPreview(false)}
-            >
-              ✕
-            </button>
-            
-            <div className="preview-receipt">
-              <div className="receipt-header">
-                <p className="receipt-urdu">براہِ کرم اپنی باری کا انتظار کریں</p>
-                <h2>Abdul Lateef Welfare Clinic</h2>
-                <div className="receipt-divider">────────────────────────</div>
-              </div>
-
-              <div className="token-display">
-                <div className="token-label">Token #</div>
-                <div className="token-number">{formData.tokenNo || '—'}</div>
-              </div>
-
-              <div className="receipt-body">
-                <div className="receipt-row">
-                  <span className="receipt-label">Patient Name</span>
-                  <span className="receipt-value">{formData.patientName || 'N/A'}</span>
-                </div>
-                <div className="receipt-row">
-                  <span className="receipt-label">Date / Time</span>
-                  <span className="receipt-value">{getNowDateTime()}</span>
-                </div>
-                <div className="receipt-row">
-                  <span className="receipt-label">Fee Paid</span>
-                  <span className="receipt-value">Rs. {formData.isFree ? 0 : (formData.fee || 0)}</span>
-                </div>
-                <div className="receipt-row">
-                  <span className="receipt-label">Serial No</span>
-                  <span className="receipt-value">{formData.serialNo || 'N/A'}</span>
-                </div>
-              </div>
-
-              <div className="receipt-footer">
-                <div className="receipt-divider">────────────────────────</div>
-                <p className="receipt-note">Doctor: {formData.doctorName || 'N/A'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Print Receipt - Hidden on screen, visible only when printing */}
-      {printData && (
-        <div className="print-receipt">
-          <div className="receipt-header">
-            <p className="receipt-urdu">براہِ کرم اپنی باری کا انتظار کریں</p>
-            <h2>Abdul Lateef Welfare Clinic</h2>
-            <div className="receipt-divider">────────────────────────</div>
-          </div>
-
-          <div className="token-display">
-            <div className="token-label">Token #</div>
-            <div className="token-number">{printData.tokenNo}</div>
-          </div>
-
-          <div className="receipt-body">
-            <div className="receipt-row">
-              <span className="receipt-label">Patient Name</span>
-              <span className="receipt-value">{printData.patientName}</span>
-            </div>
-            <div className="receipt-row">
-              <span className="receipt-label">Date / Time</span>
-              <span className="receipt-value">{printData.printedAt}</span>
-            </div>
-            <div className="receipt-row">
-              <span className="receipt-label">Fee Paid</span>
-              <span className="receipt-value">Rs. {printData.feePaid}</span>
-            </div>
-            <div className="receipt-row">
-              <span className="receipt-label">Serial No</span>
-              <span className="receipt-value">{printData.serialNo}</span>
-            </div>
-          </div>
-
-          <div className="receipt-footer">
-            <div className="receipt-divider">────────────────────────</div>
-            <p className="receipt-note">Doctor: {printData.doctorName}</p>
-          </div>
-        </div>
-      )}
     </>
   );
 }
