@@ -498,14 +498,14 @@ export default function PatientForm() {
                 Save Patient
               </button>
 
-              <button
+              {/* <button
                 type="button"
                 className="btn btn-preview"
                 onClick={() => setShowPreview(true)}
               >
                 <span>👁️</span>
                 Show Preview
-              </button>
+              </button> */}
 
               <button
                 type="button"
