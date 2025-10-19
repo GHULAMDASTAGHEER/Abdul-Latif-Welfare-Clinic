@@ -27,6 +27,21 @@ export default function PatientForm() {
     return `${dd}-${mm}-${yyyy} ${hh}:${min}:${ss}`;
   };
 
+  // Get current time in 12-hour format with AM/PM
+  const getCurrentTime12Hour = () => {
+    const now = new Date();
+    let hours = now.getHours();
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 0 should be 12
+    const displayHours = String(hours).padStart(2, '0');
+    
+    return `${displayHours}:${minutes}:${seconds} ${ampm}`;
+  };
+
   // Get next serial number
   const getNextSerialNo = () => {
     const lastSerial = parseInt(localStorage.getItem('lastSerialNo') || '0');
@@ -170,7 +185,8 @@ export default function PatientForm() {
           <div class="token-number">Token # ${data.tokenNo}</div>
           <div class="patient-info">
             Patient Name: ${data.patientName}<br>
-            Date / Time: ${data.printedAt}<br>
+            Date: ${data.date}<br>
+            Time: ${getCurrentTime12Hour()}<br>
             Fee Paid: Rs. ${data.feePaid}<br>
             Serial No: ${data.serialNo}<br>
             Doctor: ${data.doctorName}
