@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../css/patientForm.css";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -127,6 +127,7 @@ export default function PatientForm() {
   const [showPreview, setShowPreview] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const patientNameRef = useRef(null);
 
   const printReceipt = (data) => {
     // Create a new window for printing
@@ -372,6 +373,13 @@ export default function PatientForm() {
     setTimeout(() => {
       setShowToast(false);
     }, 3000);
+    
+    // Focus on patient name field for next entry
+    setTimeout(() => {
+      if (patientNameRef.current) {
+        patientNameRef.current.focus();
+      }
+    }, 100);
   };
 
   return (
@@ -435,6 +443,7 @@ export default function PatientForm() {
                     placeholder="Enter patient name"
                     value={formData.patientName}
                     onChange={handleChange}
+                    ref={patientNameRef}
                     required
                   />
                 </div>
