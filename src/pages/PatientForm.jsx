@@ -399,16 +399,14 @@ export default function PatientForm() {
                 <div className="form-group">
                   <label>Token No (Auto)</label>
                   <input
-                    type="number"
+                    type="text"
                     name="tokenNo"
-                    placeholder="Current slot token"
-                    value={formData.tokenNo}
-                    onChange={handleChange}
-                    required
-                    style={{ backgroundColor: '#f9f9f9' }}
-                    title="Current slot token number (can be edited manually)"
+                    placeholder="Total Tokens"
+                    value={`${morningToken + eveningToken}`}
+                    readOnly
+                    style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
+                    title="Total Tokens"
                   />
-                 
                 </div>
                 <div className="form-group">
                   <label>Date</label>
@@ -457,29 +455,20 @@ export default function PatientForm() {
                           onChange={() => handleDoctorSlotChange('morning')}
                           style={{ marginRight: '8px' }}
                         />
-                        <span>Morning Slot</span>
+                        <span>Morning Slot Token</span>
                       </label>
                       <input
                         type="number"
                         value={morningToken}
                         onChange={handleMorningTokenChange}
                         placeholder="Morning Token"
-                        style={{ 
-                          width: '80%', 
-                          padding: '8px',
-                          border: '1px solid #ddd',
-                          borderRadius: '4px',
-                          fontSize: '14px',
-                          backgroundColor: '#f0f0f0',
-                          cursor: 'not-allowed'
-                        }}
                         min="1"
                         readOnly
+                        style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' ,width: '90%' }}
                       />
-                     
                     </div>
                     
-                    <div style={{ flex: 1  }}>
+                    <div style={{ flex: 1 }}>
                       <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', marginBottom: '10px' }}>
                         <input
                           type="radio"
@@ -489,26 +478,17 @@ export default function PatientForm() {
                           onChange={() => handleDoctorSlotChange('evening')}
                           style={{ marginRight: '8px' }}
                         />
-                        <span>Evening Slot</span>
+                        <span>Evening Slot Token</span>
                       </label>
                       <input
                         type="number"
                         value={eveningToken}
                         onChange={handleEveningTokenChange}
                         placeholder="Evening Token"
-                        style={{ 
-                          width: '80%', 
-                          padding: '8px',
-                          border: '1px solid #ddd',
-                          borderRadius: '4px',
-                          fontSize: '14px',
-                          backgroundColor: '#f0f0f0', 
-                          cursor: 'not-allowed'
-                        }}
                         min="1"
                         readOnly
+                        style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' ,width: '91%' }}
                       />
-                     
                     </div>
                   </div>
                 </div>
