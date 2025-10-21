@@ -75,6 +75,9 @@ export default function PatientForm() {
 
   const initialSlot = localStorage.getItem('doctorSlot') || 'morning';
   
+  const [morningToken, setMorningToken] = useState(getNextTokenNo('morning'));
+  const [eveningToken, setEveningToken] = useState(getNextTokenNo('evening'));
+  
   const [formData, setFormData] = useState({
     serialNo: getNextSerialNo(),
     tokenNo: getNextTokenNo(initialSlot),
@@ -87,18 +90,37 @@ export default function PatientForm() {
   });
 
   useEffect(() => {
+    // Check if date has changed and reset tokens
+    const today = getTodayDate();
+    const lastMorningDate = localStorage.getItem('lastMorningTokenDate');
+    const lastEveningDate = localStorage.getItem('lastEveningTokenDate');
+    
+    if (lastMorningDate !== today) {
+      setMorningToken(1);
+      localStorage.setItem('lastMorningTokenNo', '0');
+    } else {
+      setMorningToken(getNextTokenNo('morning'));
+    }
+    
+    if (lastEveningDate !== today) {
+      setEveningToken(1);
+      localStorage.setItem('lastEveningTokenNo', '0');
+    } else {
+      setEveningToken(getNextTokenNo('evening'));
+    }
+    
     const morningDoctor = localStorage.getItem('morningDoctor') || "";
     const eveningDoctor = localStorage.getItem('eveningDoctor') || "";
     
     const selectedDoctor = doctorSlot === 'morning' ? morningDoctor : eveningDoctor;
-    const tokenNo = getNextTokenNo(doctorSlot);
+    const tokenNo = doctorSlot === 'morning' ? morningToken : eveningToken;
     
     setFormData(prev => ({ 
       ...prev, 
       doctorName: selectedDoctor,
       tokenNo: tokenNo
     }));
-  }, [doctorSlot]);
+  }, [doctorSlot, morningToken, eveningToken]);
 
   const [showToast, setShowToast] = useState(false);
   const [printData, setPrintData] = useState(null);
@@ -219,11 +241,37 @@ export default function PatientForm() {
     if (name === 'fee') {
       localStorage.setItem('fee', value);
     }
+    
+    // Update slot token when main tokenNo is changed
+    if (name === 'tokenNo') {
+      const tokenValue = parseInt(value) || 1;
+      if (doctorSlot === 'morning') {
+        setMorningToken(tokenValue);
+      } else {
+        setEveningToken(tokenValue);
+      }
+    }
   };
 
   const handleDoctorSlotChange = (slot) => {
     setDoctorSlot(slot);
     localStorage.setItem('doctorSlot', slot);
+  };
+
+  const handleMorningTokenChange = (e) => {
+    const value = parseInt(e.target.value) || 1;
+    setMorningToken(value);
+    if (doctorSlot === 'morning') {
+      setFormData({ ...formData, tokenNo: value });
+    }
+  };
+
+  const handleEveningTokenChange = (e) => {
+    const value = parseInt(e.target.value) || 1;
+    setEveningToken(value);
+    if (doctorSlot === 'evening') {
+      setFormData({ ...formData, tokenNo: value });
+    }
   };
 
   const handleDoctorNameChange = (e) => {
@@ -282,11 +330,18 @@ export default function PatientForm() {
     
     localStorage.setItem('lastSerialNo', formData.serialNo.toString());
     
-    const tokenDateKey = doctorSlot === 'morning' ? 'lastMorningTokenDate' : 'lastEveningTokenDate';
-    const tokenNoKey = doctorSlot === 'morning' ? 'lastMorningTokenNo' : 'lastEveningTokenNo';
-    
-    localStorage.setItem(tokenNoKey, formData.tokenNo.toString());
-    localStorage.setItem(tokenDateKey, formData.date);
+    // Update the appropriate slot token
+    if (doctorSlot === 'morning') {
+      const newMorningToken = morningToken + 1;
+      setMorningToken(newMorningToken);
+      localStorage.setItem('lastMorningTokenNo', morningToken.toString());
+      localStorage.setItem('lastMorningTokenDate', formData.date);
+    } else {
+      const newEveningToken = eveningToken + 1;
+      setEveningToken(newEveningToken);
+      localStorage.setItem('lastEveningTokenNo', eveningToken.toString());
+      localStorage.setItem('lastEveningTokenDate', formData.date);
+    }
     
     if (formData.isFree && formData.freeFeeSerialNo) {
       localStorage.setItem('lastFreeFeeSerialNo', formData.freeFeeSerialNo.toString());
@@ -299,14 +354,9 @@ export default function PatientForm() {
     const eveningDoctor = localStorage.getItem('eveningDoctor') || "";
     const currentDoctor = doctorSlot === 'morning' ? morningDoctor : eveningDoctor;
     
-    const currentDate = formData.date;
-    const nextTokenNo = currentDate === getTodayDate() 
-      ? parseInt(formData.tokenNo) + 1 
-      : getNextTokenNo(doctorSlot);
-    
     setFormData({
       serialNo: getNextSerialNo() + 1,
-      tokenNo: nextTokenNo,
+      tokenNo: doctorSlot === 'morning' ? morningToken + 1 : eveningToken + 1,
       date: getTodayDate(),
       patientName: "",
       doctorName: currentDoctor,
@@ -351,13 +401,14 @@ export default function PatientForm() {
                   <input
                     type="number"
                     name="tokenNo"
-                    placeholder="Auto-generated"
+                    placeholder="Current slot token"
                     value={formData.tokenNo}
                     onChange={handleChange}
                     required
                     style={{ backgroundColor: '#f9f9f9' }}
-                    title="Auto-generated token number (can be edited manually)"
+                    title="Current slot token number (can be edited manually)"
                   />
+                 
                 </div>
                 <div className="form-group">
                   <label>Date</label>
@@ -393,37 +444,78 @@ export default function PatientForm() {
 
               {/* Doctor Slot Selection */}
               <div className="form-row" style={{ marginTop: '15px' }}>
-                <div className="form-group" style={{ width: '100%' }}>
+                <div className="form-group" style={{ width: '100%'  }}>
                   <label>Doctor Slot</label>
-                  <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
-                    <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+                    <div style={{ flex: 1 }}>
+                      <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', marginBottom: '10px' }}>
+                        <input
+                          type="radio"
+                          name="doctorSlot"
+                          value="morning"
+                          checked={doctorSlot === 'morning'}
+                          onChange={() => handleDoctorSlotChange('morning')}
+                          style={{ marginRight: '8px' }}
+                        />
+                        <span>Morning Slot</span>
+                      </label>
                       <input
-                        type="radio"
-                        name="doctorSlot"
-                        value="morning"
-                        checked={doctorSlot === 'morning'}
-                        onChange={() => handleDoctorSlotChange('morning')}
-                        style={{ marginRight: '8px' }}
+                        type="number"
+                        value={morningToken}
+                        onChange={handleMorningTokenChange}
+                        placeholder="Morning Token"
+                        style={{ 
+                          width: '80%', 
+                          padding: '8px',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          fontSize: '14px',
+                          backgroundColor: '#f0f0f0',
+                          cursor: 'not-allowed'
+                        }}
+                        min="1"
+                        readOnly
                       />
-                      <span>Morning Slot</span>
-                    </label>
-                    <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                     
+                    </div>
+                    
+                    <div style={{ flex: 1  }}>
+                      <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', marginBottom: '10px' }}>
+                        <input
+                          type="radio"
+                          name="doctorSlot"
+                          value="evening"
+                          checked={doctorSlot === 'evening'}
+                          onChange={() => handleDoctorSlotChange('evening')}
+                          style={{ marginRight: '8px' }}
+                        />
+                        <span>Evening Slot</span>
+                      </label>
                       <input
-                        type="radio"
-                        name="doctorSlot"
-                        value="evening"
-                        checked={doctorSlot === 'evening'}
-                        onChange={() => handleDoctorSlotChange('evening')}
-                        style={{ marginRight: '8px' }}
+                        type="number"
+                        value={eveningToken}
+                        onChange={handleEveningTokenChange}
+                        placeholder="Evening Token"
+                        style={{ 
+                          width: '80%', 
+                          padding: '8px',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          fontSize: '14px',
+                          backgroundColor: '#f0f0f0', 
+                          cursor: 'not-allowed'
+                        }}
+                        min="1"
+                        readOnly
                       />
-                      <span>Evening Slot</span>
-                    </label>
+                     
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Doctor Name */}
-              <div className="form-row">
+              <div className="form-row" style={{ marginTop: '20px' }}>
                 <div className="form-group">
                   <label>Doctor Name ({doctorSlot === 'morning' ? 'Morning' : 'Evening'})</label>
                   <input
