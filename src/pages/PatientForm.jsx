@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../css/patientForm.css";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -75,6 +75,9 @@ export default function PatientForm() {
 
   const initialSlot = localStorage.getItem('doctorSlot') || 'morning';
   
+  const [morningToken, setMorningToken] = useState(getNextTokenNo('morning'));
+  const [eveningToken, setEveningToken] = useState(getNextTokenNo('evening'));
+  
   const [formData, setFormData] = useState({
     serialNo: getNextSerialNo(),
     tokenNo: getNextTokenNo(initialSlot),
@@ -87,24 +90,44 @@ export default function PatientForm() {
   });
 
   useEffect(() => {
+    // Check if date has changed and reset tokens
+    const today = getTodayDate();
+    const lastMorningDate = localStorage.getItem('lastMorningTokenDate');
+    const lastEveningDate = localStorage.getItem('lastEveningTokenDate');
+    
+    if (lastMorningDate !== today) {
+      setMorningToken(1);
+      localStorage.setItem('lastMorningTokenNo', '0');
+    } else {
+      setMorningToken(getNextTokenNo('morning'));
+    }
+    
+    if (lastEveningDate !== today) {
+      setEveningToken(1);
+      localStorage.setItem('lastEveningTokenNo', '0');
+    } else {
+      setEveningToken(getNextTokenNo('evening'));
+    }
+    
     const morningDoctor = localStorage.getItem('morningDoctor') || "";
     const eveningDoctor = localStorage.getItem('eveningDoctor') || "";
     
     const selectedDoctor = doctorSlot === 'morning' ? morningDoctor : eveningDoctor;
-    const tokenNo = getNextTokenNo(doctorSlot);
+    const tokenNo = doctorSlot === 'morning' ? morningToken : eveningToken;
     
     setFormData(prev => ({ 
       ...prev, 
       doctorName: selectedDoctor,
       tokenNo: tokenNo
     }));
-  }, [doctorSlot]);
+  }, [doctorSlot, morningToken, eveningToken]);
 
   const [showToast, setShowToast] = useState(false);
   const [printData, setPrintData] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const patientNameRef = useRef(null);
 
   const printReceipt = (data) => {
     // Create a new window for printing
@@ -147,6 +170,12 @@ export default function PatientForm() {
             margin: 2px 0;
             color: #000000;
           }
+          .token-number1 {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 2px 0;
+            color: #000000;
+          }
           .clinic-name {
             font-size: 18px;
             font-weight: bold;
@@ -182,7 +211,8 @@ export default function PatientForm() {
           <div class="urdu-text">براہِ کرم اپنی باری کا انتظار کریں</div>
           <div class="clinic-name">Abdul Lateef Welfare Clinic</div>
           <div class="divider">────────────────────────</div>
-          <div class="token-number">Token # ${data.tokenNo}</div>
+          <div class="token-number">Token No:</div>
+          <div class="token-number1">${data.tokenNo}</div>
           <div class="patient-info">
             Patient Name: ${data.patientName}<br>
             Date: ${data.date}<br>
@@ -219,11 +249,37 @@ export default function PatientForm() {
     if (name === 'fee') {
       localStorage.setItem('fee', value);
     }
+    
+    // Update slot token when main tokenNo is changed
+    if (name === 'tokenNo') {
+      const tokenValue = parseInt(value) || 1;
+      if (doctorSlot === 'morning') {
+        setMorningToken(tokenValue);
+      } else {
+        setEveningToken(tokenValue);
+      }
+    }
   };
 
   const handleDoctorSlotChange = (slot) => {
     setDoctorSlot(slot);
     localStorage.setItem('doctorSlot', slot);
+  };
+
+  const handleMorningTokenChange = (e) => {
+    const value = parseInt(e.target.value) || 1;
+    setMorningToken(value);
+    if (doctorSlot === 'morning') {
+      setFormData({ ...formData, tokenNo: value });
+    }
+  };
+
+  const handleEveningTokenChange = (e) => {
+    const value = parseInt(e.target.value) || 1;
+    setEveningToken(value);
+    if (doctorSlot === 'evening') {
+      setFormData({ ...formData, tokenNo: value });
+    }
   };
 
   const handleDoctorNameChange = (e) => {
@@ -282,11 +338,18 @@ export default function PatientForm() {
     
     localStorage.setItem('lastSerialNo', formData.serialNo.toString());
     
-    const tokenDateKey = doctorSlot === 'morning' ? 'lastMorningTokenDate' : 'lastEveningTokenDate';
-    const tokenNoKey = doctorSlot === 'morning' ? 'lastMorningTokenNo' : 'lastEveningTokenNo';
-    
-    localStorage.setItem(tokenNoKey, formData.tokenNo.toString());
-    localStorage.setItem(tokenDateKey, formData.date);
+    // Update the appropriate slot token
+    if (doctorSlot === 'morning') {
+      const newMorningToken = morningToken + 1;
+      setMorningToken(newMorningToken);
+      localStorage.setItem('lastMorningTokenNo', morningToken.toString());
+      localStorage.setItem('lastMorningTokenDate', formData.date);
+    } else {
+      const newEveningToken = eveningToken + 1;
+      setEveningToken(newEveningToken);
+      localStorage.setItem('lastEveningTokenNo', eveningToken.toString());
+      localStorage.setItem('lastEveningTokenDate', formData.date);
+    }
     
     if (formData.isFree && formData.freeFeeSerialNo) {
       localStorage.setItem('lastFreeFeeSerialNo', formData.freeFeeSerialNo.toString());
@@ -299,14 +362,9 @@ export default function PatientForm() {
     const eveningDoctor = localStorage.getItem('eveningDoctor') || "";
     const currentDoctor = doctorSlot === 'morning' ? morningDoctor : eveningDoctor;
     
-    const currentDate = formData.date;
-    const nextTokenNo = currentDate === getTodayDate() 
-      ? parseInt(formData.tokenNo) + 1 
-      : getNextTokenNo(doctorSlot);
-    
     setFormData({
       serialNo: getNextSerialNo() + 1,
-      tokenNo: nextTokenNo,
+      tokenNo: doctorSlot === 'morning' ? morningToken + 1 : eveningToken + 1,
       date: getTodayDate(),
       patientName: "",
       doctorName: currentDoctor,
@@ -322,6 +380,13 @@ export default function PatientForm() {
     setTimeout(() => {
       setShowToast(false);
     }, 3000);
+    
+    // Focus on patient name field for next entry
+    setTimeout(() => {
+      if (patientNameRef.current) {
+        patientNameRef.current.focus();
+      }
+    }, 100);
   };
 
   return (
@@ -349,14 +414,13 @@ export default function PatientForm() {
                 <div className="form-group">
                   <label>Token No (Auto)</label>
                   <input
-                    type="number"
+                    type="text"
                     name="tokenNo"
-                    placeholder="Auto-generated"
-                    value={formData.tokenNo}
-                    onChange={handleChange}
-                    required
-                    style={{ backgroundColor: '#f9f9f9' }}
-                    title="Auto-generated token number (can be edited manually)"
+                    placeholder="Total Tokens"
+                    value={`${morningToken + eveningToken}`}
+                    readOnly
+                    style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
+                    title="Total Tokens"
                   />
                 </div>
                 <div className="form-group">
@@ -386,6 +450,7 @@ export default function PatientForm() {
                     placeholder="Enter patient name"
                     value={formData.patientName}
                     onChange={handleChange}
+                    ref={patientNameRef}
                     required
                   />
                 </div>
@@ -393,37 +458,60 @@ export default function PatientForm() {
 
               {/* Doctor Slot Selection */}
               <div className="form-row" style={{ marginTop: '15px' }}>
-                <div className="form-group" style={{ width: '100%' }}>
+                <div className="form-group" style={{ width: '100%'  }}>
                   <label>Doctor Slot</label>
-                  <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
-                    <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+                    <div style={{ flex: 1 }}>
+                      <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', marginBottom: '10px' }}>
+                        <input
+                          type="radio"
+                          name="doctorSlot"
+                          value="morning"
+                          checked={doctorSlot === 'morning'}
+                          onChange={() => handleDoctorSlotChange('morning')}
+                          style={{ marginRight: '8px' }}
+                        />
+                        <span>Morning Slot Token</span>
+                      </label>
                       <input
-                        type="radio"
-                        name="doctorSlot"
-                        value="morning"
-                        checked={doctorSlot === 'morning'}
-                        onChange={() => handleDoctorSlotChange('morning')}
-                        style={{ marginRight: '8px' }}
+                        type="number"
+                        value={morningToken}
+                        onChange={handleMorningTokenChange}
+                        placeholder="Morning Token"
+                        min="1"
+                        readOnly
+                        style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' ,width: '90%' }}
                       />
-                      <span>Morning Slot</span>
-                    </label>
-                    <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    </div>
+                    
+                    <div style={{ flex: 1 }}>
+                      <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', marginBottom: '10px' }}>
+                        <input
+                          type="radio"
+                          name="doctorSlot"
+                          value="evening"
+                          checked={doctorSlot === 'evening'}
+                          onChange={() => handleDoctorSlotChange('evening')}
+                          style={{ marginRight: '8px' }}
+                        />
+                        <span>Evening Slot Token</span>
+                      </label>
                       <input
-                        type="radio"
-                        name="doctorSlot"
-                        value="evening"
-                        checked={doctorSlot === 'evening'}
-                        onChange={() => handleDoctorSlotChange('evening')}
-                        style={{ marginRight: '8px' }}
+                        type="number"
+                        value={eveningToken}
+                        onChange={handleEveningTokenChange}
+                        placeholder="Evening Token"
+                        min="1"
+                        readOnly
+                        style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' ,width: '91%' }}
                       />
-                      <span>Evening Slot</span>
-                    </label>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Doctor Name */}
-              <div className="form-row">
+              <div className="form-row" style={{ marginTop: '20px' }}>
                 <div className="form-group">
                   <label>Doctor Name ({doctorSlot === 'morning' ? 'Morning' : 'Evening'})</label>
                   <input
