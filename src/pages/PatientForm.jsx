@@ -170,6 +170,12 @@ export default function PatientForm() {
             margin: 2px 0;
             color: #000000;
           }
+          .token-number1 {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 2px 0;
+            color: #000000;
+          }
           .clinic-name {
             font-size: 18px;
             font-weight: bold;
@@ -205,7 +211,8 @@ export default function PatientForm() {
           <div class="urdu-text">براہِ کرم اپنی باری کا انتظار کریں</div>
           <div class="clinic-name">Abdul Lateef Welfare Clinic</div>
           <div class="divider">────────────────────────</div>
-          <div class="token-number">Token # ${data.tokenNo}</div>
+          <div class="token-number">Token No:</div>
+          <div class="token-number1">${data.tokenNo}</div>
           <div class="patient-info">
             Patient Name: ${data.patientName}<br>
             Date: ${data.date}<br>

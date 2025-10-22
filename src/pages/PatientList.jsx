@@ -240,7 +240,7 @@ export default function PatientList() {
             
             {list.length > 0 && (
               <>
-                <button
+                {/* <button
                   onClick={() => setShowDataModal(true)}
                   style={{
                     padding: "clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px)",
@@ -255,7 +255,7 @@ export default function PatientList() {
                   }}
                 >
                   View Data
-                </button>
+                </button> */}
                 <button
                   onClick={handleClearAllData}
                   style={{
