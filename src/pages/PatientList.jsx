@@ -8,7 +8,7 @@ import { clearAllPatients, deletePatient } from "../redux/slices/patientSlice";
 
 export default function PatientList() {
   const patientData = useSelector((state) => state.patients); // legacy (not used for loading)
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [recentLimit, setRecentLimit] = useState(200);
   const [searchQuery, setSearchQuery] = useState("");
   const [list, setList] = useState([]);
@@ -287,7 +287,7 @@ export default function PatientList() {
             value={selectedDate}
             onChange={handleDateChange}
             style={{
-              padding: "clamp(8px, 2vw, 10px)",
+              // padding: "clamp(8px, 2vw, 10px)",
               fontSize: "clamp(0.85rem, 2vw, 1rem)",
               borderRadius: "5px",
               border: "1px solid #ccc",
@@ -307,7 +307,7 @@ export default function PatientList() {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by name or serial no"
             style={{
-              padding: "clamp(8px, 2vw, 10px)",
+              // padding: "clamp(8px, 2vw, 10px)",
               fontSize: "clamp(0.85rem, 2vw, 1rem)",
               borderRadius: "5px",
               border: "1px solid #ccc",
@@ -320,7 +320,7 @@ export default function PatientList() {
             <button
               onClick={handleClearFilter}
               style={{
-                padding: "clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px)",
+                // padding: "clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px)",
                 fontSize: "clamp(0.85rem, 2vw, 1rem)",
                 backgroundColor: "#6c757d",
                 color: "white",

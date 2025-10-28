@@ -363,7 +363,7 @@ export default function PatientForm() {
     const currentDoctor = doctorSlot === 'morning' ? morningDoctor : eveningDoctor;
     
     setFormData({
-      serialNo: getNextSerialNo() + 1,
+      serialNo: getNextSerialNo(),
       tokenNo: doctorSlot === 'morning' ? morningToken + 1 : eveningToken + 1,
       date: getTodayDate(),
       patientName: "",
@@ -412,15 +412,14 @@ export default function PatientForm() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Token No (Auto)</label>
+                  <label>Total Tokens Issued</label>
                   <input
                     type="text"
                     name="tokenNo"
                     placeholder="Total Tokens"
-                    value={`${morningToken + eveningToken}`}
-                    readOnly
-                    style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
-                    title="Total Tokens"
+                    value={`${(morningToken - 1) + (eveningToken - 1)}`}
+                    onChange={handleChange}
+                    title="Total Tokens (Morning + Evening)"
                   />
                 </div>
                 <div className="form-group">
